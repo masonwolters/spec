@@ -264,7 +264,18 @@ class SpecOutputStream(OutputStream):
             self.print_context(context._parent)
         # Adjust indentation depth
         self._depth = depth(context)
-        self.print_line("\n%s%s" % (self._indent, contextDescription(context)))
+
+        parent = contextDescription(context).split(" -> ")[0]
+
+        if parent not in self.printed_parent_contexts:
+            self.print_line("\n\n%s%s" % (self._indent, parent))
+            self.print_line("-----------------")
+            self.printed_parent_contexts[parent] = True
+
+        if len(contextDescription(context).split(" -> ")) > 1:
+            self._depth = self._depth + 1
+            self.print_line("\n%s%s" % (self._indent, contextDescription(context).split(" -> ")[1]))
+
         context._printed = True
 
     def print_spec(self, color_func, test, status=None):
@@ -370,6 +381,7 @@ class SpecPlugin(Plugin):
 
     def setOutputStream(self, stream):
         self.stream = SpecOutputStream(stream, open(os.devnull, 'w'))
+        self.stream.printed_parent_contexts = {}
         return self.stream
 
     def beforeTest(self, test):
